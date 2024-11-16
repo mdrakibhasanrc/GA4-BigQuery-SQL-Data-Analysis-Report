@@ -168,6 +168,48 @@ ORDER BY aov DESC;
 ##### Report: 
 ![Screenshot_3](https://github.com/user-attachments/assets/724ad10f-f72a-40bb-8921-5ce85b2ad831)
 
+#### ✅  Device Conversion Funnel Analysis
+The Device Conversion Funnel Analysis helps you understand how users behave across different device types (e.g., mobile, desktop, tablet) as they progress through the conversion stages, from viewing products to completing a purchase. By tracking the device category (mobile, desktop, or tablet), you can identify where users drop off in the conversion funnel for each device type and take targeted actions to improve your site's performance.
+This query calculates the Average Order Value (AOV) for each device category. By understanding how much users spend on average across different devices, you can identify if certain devices are underperforming in terms of revenue generation.
+```sql
+WITH device_conversion_funnel AS (
+  SELECT 
+    device.category AS device_category,
+    user_pseudo_id,
+    COUNTIF(event_name = 'view_item') AS product_views,
+    COUNTIF(event_name = 'add_to_cart') AS add_to_cart,
+    COUNTIF(event_name = 'begin_checkout') AS begin_checkout,
+    COUNTIF(event_name = 'purchase') AS purchases
+  FROM 
+    `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+  WHERE 
+    event_name IN ('view_item', 'add_to_cart', 'begin_checkout', 'purchase')
+  GROUP BY 
+    device_category, user_pseudo_id
+)
+
+SELECT
+    device_category,
+    COUNT(DISTINCT user_pseudo_id) AS total_users,
+    SUM(product_views) AS total_product_views,
+    SUM(add_to_cart) AS total_add_to_cart,
+    SUM(begin_checkout) AS total_begin_checkout,
+    SUM(purchases) AS total_purchases,
+    SAFE_DIVIDE(SUM(add_to_cart), SUM(product_views)) AS add_to_cart_rate,
+    SAFE_DIVIDE(SUM(begin_checkout), SUM(add_to_cart)) AS checkout_initiation_rate,
+    SAFE_DIVIDE(SUM(purchases), SUM(begin_checkout)) AS purchase_conversion_rate,
+    SAFE_DIVIDE(SUM(purchases), SUM(product_views)) AS overall_conversion_rate
+FROM 
+    device_conversion_funnel
+GROUP BY 
+    device_category
+ORDER BY 
+    overall_conversion_rate DESC;
+```
+##### Report: 
+![Screenshot_4](https://github.com/user-attachments/assets/2f1651e5-a1aa-4809-bec0-190f99d745f9)
+![Screenshot_5](https://github.com/user-attachments/assets/c2ac19f8-a611-42da-9fa5-8c8cb1e1b4d5)
+
 
 
 
