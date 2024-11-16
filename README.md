@@ -33,31 +33,6 @@ SELECT
 ##### Report: 
 ![Query 1 ](https://github.com/user-attachments/assets/5cc118a0-e8e0-4f95-87de-88db673a80ce)
 
-#### ✅ traffic_source.medium by total user, new User, New user(%), Returning User, and returning users (%) & active users 
-```sql
-select
-  device.category,
-
-  traffic_source.medium,
-
-      count(user_pseudo_id) as total_user,
-
-      count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')=1 then user_pseudo_id else null end)as new_users,
-
-     round( count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')=1 then user_pseudo_id else null end) / count(user_pseudo_id),2) * 100 as new_users_pct,
-
-          count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')>1 then user_pseudo_id else null end)as Returning_users,
-
-     round( count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')>1 then user_pseudo_id else null end) / count(user_pseudo_id),2) * 100 as Returning_users_pct,
-
-     count(case when (select value.int_value from unnest (event_params) where key ='engagement_time_msec') > 0 then user_pseudo_id else null end) as active_user
-
-from  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
-group by traffic_source.medium, device.category;
-```
-##### Report: 
-![Query 2](https://github.com/user-attachments/assets/b392e79c-00ea-4d85-b150-4f426a804540)
-
 #### ✅ Traffic Medium Name By Total user,Total Session,Unique Session, New session, engaged_sessions_per_user,number_of_sessions_per_user
 ```sql
 select	
@@ -83,10 +58,115 @@ group by 	traffic_source.name;
 ##### Report: 
 ![Query_3](https://github.com/user-attachments/assets/b8a049c2-8a5d-46ad-922d-3d9b1a269b26)
 
+#### ✅ traffic_source.medium by total user, new User, New user(%), Returning User, and returning users (%) & active users 
+```sql
+select
+  device.category,
+
+  traffic_source.medium,
+
+      count(user_pseudo_id) as total_user,
+
+      count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')=1 then user_pseudo_id else null end)as new_users,
+
+     round( count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')=1 then user_pseudo_id else null end) / count(user_pseudo_id),2) * 100 as new_users_pct,
+
+          count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')>1 then user_pseudo_id else null end)as Returning_users,
+
+     round( count(case when (select value.int_value from unnest(event_params) where key ='ga_session_number')>1 then user_pseudo_id else null end) / count(user_pseudo_id),2) * 100 as Returning_users_pct,
+
+     count(case when (select value.int_value from unnest (event_params) where key ='engagement_time_msec') > 0 then user_pseudo_id else null end) as active_user
+
+from  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+group by traffic_source.medium, device.category;
+```
+##### Report: 
+![Query 2](https://github.com/user-attachments/assets/b392e79c-00ea-4d85-b150-4f426a804540)
 
 
 
 
+#### ✅ Device Category Performance: Identify Conversion Differences by Device
+This query provides insights into how users are converting across different devices and platforms (desktop, mobile, tablet), helping you determine if certain devices are underperforming.
+```sql
+SELECT 
+     device.category as device_category,
+     count( distinct user_pseudo_id) as total_user,
+     countif(event_name='purchase') as total_purchase,
+     sum(ecommerce.total_item_quantity) as total_item_sold,
+     sum(ecommerce.purchase_revenue) as total_revenue,
+     safe_divide(countif(event_name='purchase'),count(distinct user_pseudo_id)) as conversion_rate
+ FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` 
+ where event_name='purchase'
+ group by device_category
+ order by conversion_rate desc;
+```
+##### Report: 
+![Screenshot_1](https://github.com/user-attachments/assets/2025570e-1864-4672-a2c1-7f3da8428e67)
+
+
+#### ✅  Cart Abandonment rate  and checkout abandonment rate by Device Category
+To improve Conversion Rate Optimization (CRO), especially around Average Order Value (AOV), Cart Abandonment, and Checkout Abandonment, understanding device-specific behavior is key.
+Optimizing these areas across different devices can significantly impact overall conversion rates. Below are important queries to identify potential problems in these areas using GA4 data in BigQuery.
+```sql
+with dev_perform as ( 
+  SELECT 
+    device.category as device_category,
+    user_pseudo_id, 
+    countif(event_name='add_to_cart') as add_to_cart,
+    countif(event_name='begin_checkout') as begin_checkout,
+    countif(event_name='purchase') as purchase
+ FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` 
+ where event_name in ('add_to_cart','begin_checkout','purchase')
+ group by device_category,user_pseudo_id
+)
+
+select
+    device_category,
+    count(distinct user_pseudo_id) as total_users,
+    sum(add_to_cart) as total_add_to_cart,
+    sum(begin_checkout) as total_begin_checkout,
+    sum(purchase) as total_purchase,
+    round(safe_divide(sum(add_to_cart)- sum(purchase),sum(add_to_cart)),2) as cart_abandonment_rate,
+    round(safe_divide(sum(begin_checkout)- sum(purchase),sum(begin_checkout)),2) as checkout_abandonment_rate,
+from dev_perform
+group by device_category;
+```
+##### Report: 
+![Screenshot_2](https://github.com/user-attachments/assets/20df8307-43a2-4601-9bed-ec34d2db1292)
+
+
+#### ✅  Average Order Value (AOV) by Device Category
+This query calculates the Average Order Value (AOV) for each device category. By understanding how much users spend on average across different devices, you can identify if certain devices are underperforming in terms of revenue generation.
+```sql
+WITH aov_data AS (
+  SELECT
+    user_pseudo_id,
+    device.category AS device_category,
+    SUM(event_params.value.int_value) AS total_purchase_value
+  FROM
+    `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` AS events
+  JOIN
+    UNNEST(event_params) AS event_params
+  WHERE
+    event_name = 'purchase'
+    AND event_params.key = 'value' -- assuming 'value' holds the transaction value
+  GROUP BY
+    user_pseudo_id, device.category
+)
+
+SELECT
+  device_category,
+  COUNT(DISTINCT user_pseudo_id) AS total_users,
+  SUM(total_purchase_value) AS total_revenue,
+  COUNT(DISTINCT user_pseudo_id) AS total_purchases,
+  ROUND(SAFE_DIVIDE(SUM(total_purchase_value), COUNT(DISTINCT user_pseudo_id)),2) AS aov
+FROM aov_data
+GROUP BY device_category
+ORDER BY aov DESC;
+```
+##### Report: 
+![Screenshot_3](https://github.com/user-attachments/assets/724ad10f-f72a-40bb-8921-5ce85b2ad831)
 
 
 
