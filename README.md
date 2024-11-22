@@ -1,8 +1,10 @@
-### GA4 BigQuery SQL Data Analysis Report
+### GA4 BigQuery SQL Data Analysis for Conversion Rate Optimization Report
+
+### Company Name: Ajker Deal
 
 ### Introduction:
 
-This repository contains SQL queries and templates for analyzing Google Analytics 4 (GA4) data in BigQuery. It provides pre-built reports for user behavior, traffic sources, conversions, and more—helping analysts quickly extract valuable insights from their GA4 event data.
+This repository contains SQL queries and templates for analyzing Google Analytics 4 (GA4) data in BigQuery. It provides pre-built reports for user behavior, traffic sources, conversions, and more—helping analysts quickly extract valuable insights for Conversion Rate Optimization.
 
 ### Features:
 
