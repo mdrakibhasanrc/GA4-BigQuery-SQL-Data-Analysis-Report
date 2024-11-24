@@ -221,6 +221,19 @@ ORDER BY us.user_type;
 ![Screenshot_1](https://github.com/user-attachments/assets/d126fd75-e395-4959-b2e3-af60f2c7082f)
 
 
+Summary:
+        New Users: 257,314 users, 3,511 made a purchase, with a 1.36% conversion rate.
+        
+        Returning Users: 51,395 users, 3,447 made a purchase, with a 6.71% conversion rate.
+        
+Key Findings:
+
+        Despite having many more new users, returning users have a much higher conversion rate (6.71% vs. 1.36%).
+        
+        This suggests that retaining customers or improving engagement for new users could boost purchases.
+
+
+
 
 #### ✅  Device Conversion Funnel Analysis
 The Device Conversion Funnel Analysis helps you understand how users behave across different device types (e.g., mobile, desktop, tablet) as they progress through the conversion stages, from viewing products to completing a purchase. By tracking the device category (mobile, desktop, or tablet), you can identify where users drop off in the conversion funnel for each device type and take targeted actions to improve your site's performance.
