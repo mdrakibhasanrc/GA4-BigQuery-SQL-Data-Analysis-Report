@@ -184,23 +184,41 @@ Summary & Insight:
       III) Tablet users have the lowest total sales ($6,582) and AOV ($67.86), indicating a need for optimization.
 
 
-#### ✅ New Vs Returning Users by Total users 
+#### ✅ New Vs Returning Users by Total users and conversion rate
 ```sql
-SELECT 
-   case 
-   when (select value.int_value from unnest(event_params) where event_name='session_start' and key='ga_session_number')= 1 then 'New User'
-      when (select value.int_value from unnest(event_params) where event_name='session_start' and key='ga_session_number')> 1 then 'Returning_Users'
-    else 'null' end  as User_Type,
+with user_sessions as (
+  select
+    user_pseudo_id,
+    case
+      when (select value.int_value from unnest(event_params) where key='ga_session_number')=1 then 'new_users'
+      when (select value.int_value from unnest(event_params) where key='ga_session_number')>1 then 'returning_user'
+      else null end as user_type
+  from  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+  where event_name='session_start'
+),
 
-    count(distinct user_pseudo_id) as total_user
-
- FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
-
- group by User_Type;
+user_purchase as (
+  select
+     user_pseudo_id,
+     countif(event_name='purchase') as total_purchase
+  from  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+  where event_name='purchase'
+  group by user_pseudo_id
+)
+select
+   us.user_type,
+   count(distinct us.user_pseudo_id) as total_users,
+   count(distinct case when up.total_purchase>0 then us.user_pseudo_id end) as Purchase,
+   round(safe_divide(count(distinct case when up.total_purchase>0 then up.user_pseudo_id end),count(distinct us.user_pseudo_id))*100,2) as conversion_rate
+from user_sessions us
+left join user_purchase up on up.user_pseudo_id=us.user_pseudo_id  
+group by us.user_type
+ORDER BY us.user_type;
 ```
 ##### Report: 
 
-![Query 1 ](https://github.com/user-attachments/assets/5cc118a0-e8e0-4f95-87de-88db673a80ce)
+
+![Screenshot_1](https://github.com/user-attachments/assets/d126fd75-e395-4959-b2e3-af60f2c7082f)
 
 
 
