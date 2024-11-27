@@ -278,5 +278,44 @@ ORDER BY
 ![Screenshot_5](https://github.com/user-attachments/assets/c2ac19f8-a611-42da-9fa5-8c8cb1e1b4d5)
 
 
+#### ✅  Traffic Channel Channel By
+
+E-commerce platforms face challenges with high cart and checkout abandonment rates, leading to low conversion rates and missed revenue opportunities. Optimizing traffic sources and user journeys is crucial to improve performance metrics and drive growth.
+
+```sql
+with flat_data as (
+  SELECT 
+    traffic_source.medium as traffic_medium,
+    user_pseudo_id,
+    countif(event_name='page_view') as page_view,
+    sum(ecommerce.purchase_revenue) as total_sales,
+    countif(event_name='add_to_cart') as add_to_cart,
+    countif(event_name='begin_checkout') as begin_checkout,
+    countif(event_name='purchase') as purchase
+ FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+ where event_name in ('page_view','add_to_cart','begin_checkout','purchase')
+ group by traffic_source.medium, user_pseudo_id)
+
+ select
+     traffic_medium,
+     count(distinct user_pseudo_id) as total_users,
+     sum(page_view) as total_page_view,
+     sum(add_to_cart) as total_add_to_cart,
+     sum(begin_checkout) as total_begin_checkout,
+     sum(purchase) as total_purchase,
+     sum(total_sales) as total_revenue,
+     round(safe_divide(sum(add_to_cart)-sum(purchase),sum(add_to_cart))*100,2) as cart_abandonment_rate,
+     round(safe_divide(sum(begin_checkout)-sum(purchase),sum(begin_checkout))*100,2) as chekout_abandonment_rate,
+     round(safe_divide(sum(total_sales),sum(purchase)),2) as AOV,
+     round(safe_divide(sum(purchase),count(distinct user_pseudo_id))*100,2) as conversion_rate
+from flat_data
+group by traffic_medium
+order by conversion_rate desc;    
+```
+##### Report: 
+
+![Screenshot_1](https://github.com/user-attachments/assets/e9e10c79-8e0f-451e-bd5f-7d55c919fc07)
+
+![Screenshot_2](https://github.com/user-attachments/assets/e001206d-0467-42ba-85fb-ac5529cd64c8)
 
 
