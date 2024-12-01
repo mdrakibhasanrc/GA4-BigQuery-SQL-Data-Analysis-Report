@@ -1,6 +1,5 @@
 ### GA4 BigQuery SQL Data Analysis for Conversion Rate Optimization Report
 
-### Company Name: Ajker Deal
 
 ### Introduction:
 
