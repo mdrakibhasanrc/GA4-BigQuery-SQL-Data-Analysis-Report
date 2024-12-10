@@ -9,11 +9,17 @@ This repository contains SQL queries and templates for analyzing Google Analytic
 
 1. Pre-built SQL queries for common GA4 analysis tasks.
 
-2. Templates for key reports and metrics.
+2. Templates for key reports 
  
 3. Easy integration with BigQuery projects.
   
 4. Perfect for anyone looking to streamline GA4 data analysis in BigQuery.
+
+### Data Collection & Setup (Integrate GA4 & BigQuery):
+
+1. Configured Google Analytics 4 (GA4) to export data to BigQuery, enabling more detailed and granular analysis.
+
+2. Set up automated queries to track product views, add-to-cart events, revenue, and user demographics to gather insights across different user segments.
 
 ### Custom SQL Query With Bigquery to get Better Actionable Insights:
 
