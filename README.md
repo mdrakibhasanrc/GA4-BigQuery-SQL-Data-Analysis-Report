@@ -426,3 +426,125 @@ Drop-Off Analysis:
     Drop-Off After Add to Cart: 59.35% abandoned their carts, highlighting potential issues in the cart or checkout process.
    
     Drop-Off After Begin Checkout: 50.6% of users abandoned checkout, suggesting areas for optimization in the final purchasing steps.
+
+
+
+
+
+    #### ✅    Identifying Low-Conversion but High Page-View Pages
+
+dentifying low-conversion but high page-view pages is crucial for optimizing an eCommerce website's performance. By pinpointing these pages, businesses can focus on improving user experience, content, and calls-to-action to increase conversions and drive better results.
+
+```sql
+with dataset as (
+SELECT 
+    user_pseudo_id,
+    event_name,
+    parse_date('%Y%m%d',event_date) as event_date,
+    (select value.string_value from unnest (event_params) where key='page_location') as page,
+ FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*` 
+ where event_name in ('page_view','view_item','add_to_cart','begin_checkout','purchase')
+),
+
+page_view as (
+  select
+      user_pseudo_id,
+      page,
+      event_name,
+      event_date
+  from dataset
+  where event_name='page_view'
+),
+
+view_item as (
+  select
+      user_pseudo_id,
+      event_name,
+      event_date
+  from dataset
+  where event_name='view_item'
+),
+
+add_to_cart as (
+  select
+      user_pseudo_id,
+      event_name,
+      event_date
+  from dataset
+  where event_name='add_to_cart'
+),
+
+begin_checkout as (
+  select
+      user_pseudo_id,
+      event_name,
+      event_date
+  from dataset
+  where event_name='begin_checkout'
+),
+
+purchase as (
+  select
+      user_pseudo_id,
+      event_name,
+      event_date
+  from dataset
+  where event_name='purchase'
+),
+
+funnel as (
+  select
+      pv.page,
+      count(distinct pv.user_pseudo_id) as page_view_count,
+      count(distinct vi.user_pseudo_id) as view_item_count,
+      count(distinct atc.user_pseudo_id) as add_to_cart_count,
+      count(distinct bc.user_pseudo_id) as begin_checkout_count,
+      count(distinct p.user_pseudo_id) as purchase_count
+  from page_view pv
+  left join  view_item vi on pv.user_pseudo_id=vi.user_pseudo_id and pv.event_date=vi.event_date
+  left join add_to_cart atc on vi.user_pseudo_id=atc.user_pseudo_id and vi.event_date=atc.event_date
+  left join begin_checkout bc on atc.user_pseudo_id=bc.user_pseudo_id and atc.event_date=bc.event_date
+  left join purchase p on bc.user_pseudo_id=p.user_pseudo_id and bc.event_date=p.event_date
+  group by pv.page
+)
+
+select
+   page,
+   sum(page_view_count) as total_page_view_count,
+   sum(view_item_count) as total_view_item_count,
+
+   sum(add_to_cart_count) as total_add_to_cart_count,
+
+   sum(begin_checkout_count) as total_begin_checkout_count,
+
+   sum(purchase_count) as total_purchase_count,
+   round(safe_divide(sum(purchase_count),sum(page_view_count))*100,2) as conversion_rate 
+from funnel
+group by page
+order by total_page_view_count desc, conversion_rate asc;   
+```
+##### Report: 
+![Screenshot_2](https://github.com/user-attachments/assets/1d14778e-e84f-4485-92e0-00401b0cbe57)
+
+
+![Screenshot_3](https://github.com/user-attachments/assets/27bdc56f-9755-4f86-914d-8f0d3df745c4)
+
+
+
+Insight:
+
+    The page "https://shop.googlemerchandisestore.com/" has a higher conversion rate of 2.18%, despite having significantly more page
+    views and higher counts in add-to-cart, checkout, and purchase actions.
+     
+     The page "https://shop.googlemerchandisestore.com/Google+Redesign/Apparel" has a lower conversion rate of 1.29%, despite high 
+     page views and moderate engagement metrics.
+        
+Key Insights:
+
+    The high page views on both pages indicate strong traffic, but the conversion rate on the apparel page is significantly lower.
+    
+    The apparel page sees lower conversions in relation to add-to-cart and checkout actions compared to the main store page, indicating
+    a potential issue in product presentation, user experience, or checkout flow.
+    
+    A deeper analysis of the apparel page's content, UX, and call-to-action elements could help boost conversion rates.
+
